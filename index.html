@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pixel Landscape Habitat</title>
+  <style>
+    :root {
+      --line: #2a2d2a;
+      --sky-top: #b5ece7;
+      --sky-bottom: #92d4ce;
+      --grass-main: #b9d98a;
+      --grass-shade: #9ec06d;
+      --mountain-dark: #7a4f43;
+      --mountain-mid: #a26f5e;
+      --snow: #e8f3dd;
+      --water: #5d6fc4;
+      --water-shine: #93a4eb;
+      --shore: #89644c;
+      --tree: #6c9b57;
+      --trunk: #6a4b36;
+
+      --triangle: #f2ffcd;
+      --square: #d8f4c6;
+      --circle: #d9e8ff;
+      --pentagon: #fff4d0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      position: relative;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(196, 229, 194, 0.22) 0%, rgba(0, 0, 0, 0) 42%),
+        radial-gradient(circle at 45% 20%, #5a7a78 0%, #3a514f 58%, #273534 100%);
+      image-rendering: pixelated;
+      overflow: hidden;
+      font-family: "Courier New", monospace;
+      transition: background 1.2s ease;
+    }
+
+    body.day {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(196, 229, 194, 0.22) 0%, rgba(0, 0, 0, 0) 42%),
+        radial-gradient(circle at 45% 20%, #5a7a78 0%, #3a514f 58%, #273534 100%);
+    }
+
+    body.twilight {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(161, 188, 212, 0.20) 0%, rgba(0, 0, 0, 0) 42%),
+        radial-gradient(circle at 45% 20%, #4f5f7e 0%, #323f58 58%, #232e44 100%);
+    }
+
+    body.night {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(122, 145, 189, 0.16) 0%, rgba(0, 0, 0, 0) 40%),
+        radial-gradient(circle at 45% 20%, #2e3f5d 0%, #1f2a41 60%, #161d2f 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 3px);
+      opacity: 0.22;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(240, 255, 230, 0.14) 0 34%, rgba(0, 0, 0, 0) 55%),
+        radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 56%, rgba(0, 0, 0, 0.26) 100%);
+    }
+
+    .frame {
+      position: relative;
+      width: min(1100px, 96vw);
+      aspect-ratio: 4 / 3;
+      border: 4px solid #181b18;
+      box-shadow: 0 0 0 3px #2f352f, 0 18px 36px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      background: #88bfb8;
+      --night-strength: 0;
+      --sun-alpha: 1;
+      --moon-alpha: 0;
+      z-index: 1;
+    }
+
+    .frame::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 2px, rgba(0, 0, 0, 0.05) 2px 4px);
+      opacity: 0.35;
+      z-index: 30;
+    }
+
+    .layer { position: absolute; inset: 0; }
+
+    .sky {
+      height: 54%;
+      background: linear-gradient(var(--sky-top), var(--sky-bottom));
+      border-bottom: 4px solid var(--line);
+      z-index: 1;
+    }
+
+    .sky::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(#10213f, #1b335a 55%, #29487a);
+      opacity: var(--night-strength);
+      pointer-events: none;
+      transition: opacity 1s linear;
+    }
+
+    .sky::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0 12px,
+        rgba(224, 247, 245, 0.62) 12px 15px,
+        transparent 15px 24px
+      );
+      opacity: 0.45;
+      animation: skyShimmer 4s linear infinite;
+      pointer-events: none;
+    }
+
+    .cloud {
+      position: absolute;
+      width: 76px;
+      height: 28px;
+      background: #deefd9;
+      border: 3px solid var(--line);
+      box-shadow: inset 0 -4px 0 #c2dcb8;
+      animation: drift linear infinite;
+    }
+
+    .frame.night .cloud,
+    .frame.twilight .cloud {
+      background: #a4b4c9;
+      box-shadow: inset 0 -4px 0 #8697b0;
+    }
+
+    .sun {
+      position: absolute;
+      left: 9%;
+      top: 8%;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid var(--line);
+      background: radial-gradient(circle at 35% 30%, #fff7bf 0 28%, #ffe48b 29% 64%, #ffc95f 65% 100%);
+      box-shadow: 0 0 0 8px rgba(255, 229, 132, 0.22);
+      z-index: 2;
+      opacity: var(--sun-alpha);
+      transition: opacity 1s linear;
+    }
+
+    .night-objects {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      opacity: var(--moon-alpha);
+      transition: opacity 1s linear;
+    }
+
+    .moon {
+      position: absolute;
+      left: 10%;
+      top: 10%;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 3px solid #dbe5f2;
+      background: radial-gradient(circle at 35% 30%, #f5f8ff 0 30%, #d7e0f1 31% 100%);
+      box-shadow: 0 0 0 8px rgba(185, 204, 244, 0.16);
+    }
+
+    .moon::after {
+      content: "";
+      position: absolute;
+      right: 10px;
+      top: 12px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(166, 180, 204, 0.35);
+    }
+
+    .stars span {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #f5f8ff;
+      box-shadow: 0 0 6px rgba(245, 248, 255, 0.7);
+      animation: twinkle 2.4s ease-in-out infinite;
+    }
+
+    .stars span:nth-child(2n) { animation-duration: 3.2s; }
+    .stars span:nth-child(3n) { animation-duration: 2.8s; }
+
+    .cloud::before,
+    .cloud::after {
+      content: "";
+      position: absolute;
+      background: inherit;
+      border: inherit;
+    }
+
+    .cloud::before { width: 22px; height: 20px; left: 9px; top: -12px; }
+    .cloud::after { width: 24px; height: 18px; right: 8px; top: -10px; }
+
+    .mountain {
+      position: absolute;
+      bottom: 44%;
+      clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      border: 4px solid var(--line);
+      border-bottom: none;
+      background: linear-gradient(120deg, var(--mountain-mid) 45%, var(--mountain-dark) 46%);
+      z-index: 3;
+    }
+
+    .mountain::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 8%;
+      width: 34%;
+      height: 24%;
+      clip-path: polygon(50% 0, 100% 100%, 0 100%);
+      background: var(--snow);
+      border: 3px solid #c8d8bb;
+      border-bottom: none;
+    }
+
+    .land {
+      top: 54%;
+      height: 46%;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(224, 243, 175, 0.45) 0 11%, transparent 12%),
+        radial-gradient(circle at 72% 18%, rgba(208, 232, 157, 0.35) 0 13%, transparent 14%),
+        repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.05) 0 8px, transparent 8px 16px),
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.08) 0 6px, transparent 6px 14px),
+        linear-gradient(var(--grass-main), var(--grass-shade));
+      z-index: 4;
+    }
+
+    .land::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -3px;
+      height: 6px;
+      background: #7a9d55;
+      border-top: 2px solid var(--line);
+      border-bottom: 2px solid var(--line);
+    }
+
+    .land::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 64%, rgba(88, 118, 61, 0.24) 0 6%, transparent 7%),
+        radial-gradient(circle at 38% 76%, rgba(88, 118, 61, 0.2) 0 5%, transparent 6%),
+        radial-gradient(circle at 59% 66%, rgba(88, 118, 61, 0.2) 0 6%, transparent 7%),
+        radial-gradient(circle at 84% 72%, rgba(88, 118, 61, 0.22) 0 6%, transparent 7%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .tree {
+      position: absolute;
+      width: 30px;
+      height: 48px;
+      z-index: 10;
+    }
+
+    .tree::before {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      background: var(--trunk);
+      border: 2px solid var(--line);
+    }
+
+    .tree::after {
+      content: "";
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      left: 0;
+      top: 2px;
+      border-radius: 34% 34% 30% 30%;
+      background: var(--tree);
+      border: 3px solid var(--line);
+      box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .bush {
+      position: absolute;
+      width: 20px;
+      height: 12px;
+      border-radius: 40% 40% 35% 35%;
+      background: #6f9b58;
+      border: 2px solid var(--line);
+      z-index: 10;
+    }
+
+    .rock {
+      position: absolute;
+      width: 18px;
+      height: 12px;
+      border-radius: 45% 45% 35% 35%;
+      background: #8d8a85;
+      border: 2px solid var(--line);
+      box-shadow: inset -3px -2px 0 rgba(0, 0, 0, 0.15);
+      z-index: 10;
+    }
+
+    .rock.small { width: 13px; height: 9px; }
+
+    .flower {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      background: #f4e7ff;
+      z-index: 11;
+    }
+
+    .flower::before {
+      content: "";
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: #f7d978;
+      border: 1px solid #8d7438;
+    }
+
+    .flower.yellow { background: #fff0bf; }
+    .flower.pink { background: #ffd5e6; }
+    .flower.blue { background: #d6e7ff; }
+
+    .water {
+      position: absolute;
+      background: var(--water);
+      border: 4px solid var(--shore);
+      box-shadow: inset 0 0 0 3px #394aa7;
+      overflow: hidden;
+      z-index: 6;
+    }
+
+    .water::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent 0 10px, rgba(167, 183, 255, 0.7) 10px 13px, transparent 13px 20px);
+      opacity: 0.6;
+      animation: shimmer 2.8s linear infinite;
+    }
+
+    #lake-left {
+      left: 8%;
+      top: 63%;
+      width: 20%;
+      height: 18%;
+      border-radius: 42% 53% 46% 52%;
+    }
+
+    #lake-right {
+      left: 50%;
+      top: 61%;
+      width: 30%;
+      height: 24%;
+      border-radius: 38% 52% 44% 40%;
+    }
+
+    .boat {
+      position: absolute;
+      left: 64%;
+      top: 72%;
+      width: 36px;
+      height: 16px;
+      z-index: 12;
+    }
+
+    .boat::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 36px;
+      height: 10px;
+      clip-path: polygon(0 45%, 12% 0, 88% 0, 100% 45%, 90% 100%, 10% 100%);
+      background: #373c4e;
+      border: 2px solid var(--line);
+    }
+
+    .boat::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      bottom: 8px;
+      width: 8px;
+      height: 8px;
+      background: #5f6a83;
+      border: 2px solid var(--line);
+    }
+
+    .shape-layer { z-index: 20; pointer-events: auto; }
+
+    .shape {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      transition: opacity 0.12s linear;
+      filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.35));
+      pointer-events: none;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 18px solid var(--triangle);
+    }
+
+    .square { background: var(--square); border: 2px solid #6e8761; }
+
+    .circle {
+      background: var(--circle);
+      border: 2px solid #6e7aa6;
+      border-radius: 50%;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .circle.circle-big {
+      background: #f2f6ff;
+      border-color: #8a99cf;
+      box-shadow: inset 0 -2px 0 rgba(122, 136, 184, 0.35);
+    }
+
+    .circle.circle-small {
+      background: #d8cef1;
+      border-color: #7b6aa6;
+      box-shadow: inset 0 -2px 0 rgba(98, 82, 138, 0.35);
+    }
+
+    .circle.circle-small-warm {
+      background: #efb7b0;
+      border-color: #b36a63;
+      box-shadow: inset 0 -2px 0 rgba(130, 74, 67, 0.35);
+    }
+
+    .circle.circle-p2 {
+      background: #f1df9f;
+      border-color: #b9984d;
+      box-shadow: inset 0 -2px 0 rgba(153, 126, 58, 0.35);
+    }
+
+    .circle:hover {
+      box-shadow: 0 0 0 3px rgba(225, 234, 255, 0.55);
+    }
+
+    .pentagon {
+      width: 22px;
+      height: 22px;
+      background: var(--pentagon);
+      border: 2px solid #9a8f6d;
+      clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+    }
+
+    .title {
+      position: absolute;
+      left: 12px;
+      top: 22%;
+      z-index: 25;
+      padding: 8px 10px;
+      border: 3px solid var(--line);
+      background: rgba(231, 244, 213, 0.85);
+      font-size: 14px;
+      font-weight: 700;
+      color: #2e3d2d;
+      letter-spacing: 0.2px;
+    }
+
+    .modal {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 10, 17, 0.6);
+      z-index: 60;
+      padding: 18px;
+    }
+
+    .modal.show { display: flex; }
+
+    .modal-card {
+      width: min(360px, 92%);
+      border: 4px solid var(--line);
+      background: #d8e8bf;
+      box-shadow: 0 0 0 3px #788d66, 0 12px 26px rgba(0, 0, 0, 0.35);
+      padding: 12px;
+      color: #273624;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #758963;
+      padding-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--line);
+      background: #b8cb93;
+      color: #203020;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .portrait {
+      width: 96px;
+      height: 96px;
+      border: 3px solid var(--line);
+      background: #9fb789;
+      image-rendering: pixelated;
+      object-fit: cover;
+    }
+
+    .name-box {
+      border: 2px solid #6f845d;
+      background: #c9ddaa;
+      padding: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
+
+    .name-editor {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 6px;
+    }
+
+    .name-input {
+      border: 2px solid #6f845d;
+      background: #eef6df;
+      color: #233523;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 6px;
+      min-width: 0;
+    }
+
+    .name-btn {
+      border: 2px solid var(--line);
+      background: #c3d8a0;
+      color: #203020;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .name-btn:hover { filter: brightness(1.05); }
+
+    .modal-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .sound-btn {
+      border: 2px solid var(--line);
+      background: #b8cb93;
+      color: #203020;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .sound-btn:hover { filter: brightness(1.05); }
+
+    .modal-tip {
+      margin-top: 10px;
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    @keyframes drift {
+      from { transform: translateX(-180px); }
+      to { transform: translateX(1300px); }
+    }
+
+    @keyframes shimmer {
+      from { transform: translateY(-8px); }
+      to { transform: translateY(8px); }
+    }
+
+    @keyframes skyShimmer {
+      from { transform: translateY(-6px); }
+      to { transform: translateY(6px); }
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.35; transform: scale(0.95); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame" id="scene">
+    <div class="title" id="clock-title">--:--:--</div>
+
+    <div class="layer sky" id="sky-area">
+      <div class="night-objects">
+        <div class="moon"></div>
+        <div class="stars">
+          <span style="left: 8%; top: 10%;"></span>
+          <span style="left: 18%; top: 18%;"></span>
+          <span style="left: 25%; top: 8%;"></span>
+          <span style="left: 34%; top: 16%;"></span>
+          <span style="left: 44%; top: 11%;"></span>
+          <span style="left: 53%; top: 7%;"></span>
+          <span style="left: 62%; top: 15%;"></span>
+          <span style="left: 71%; top: 10%;"></span>
+          <span style="left: 79%; top: 18%;"></span>
+          <span style="left: 88%; top: 13%;"></span>
+          <span style="left: 42%; top: 24%;"></span>
+          <span style="left: 68%; top: 26%;"></span>
+          <span style="left: 16%; top: 32%;"></span>
+          <span style="left: 29%; top: 36%;"></span>
+          <span style="left: 37%; top: 33%;"></span>
+          <span style="left: 46%; top: 39%;"></span>
+          <span style="left: 58%; top: 35%;"></span>
+          <span style="left: 64%; top: 41%;"></span>
+          <span style="left: 74%; top: 34%;"></span>
+          <span style="left: 83%; top: 38%;"></span>
+          <span style="left: 90%; top: 32%;"></span>
+          <span style="left: 38%; top: 30%;"></span>
+          <span style="left: 44%; top: 34%;"></span>
+          <span style="left: 50%; top: 31%;"></span>
+          <span style="left: 56%; top: 33%;"></span>
+          <span style="left: 62%; top: 30%;"></span>
+          <span style="left: 22%; top: 46%;"></span>
+          <span style="left: 31%; top: 49%;"></span>
+          <span style="left: 40%; top: 47%;"></span>
+          <span style="left: 49%; top: 50%;"></span>
+          <span style="left: 58%; top: 46%;"></span>
+          <span style="left: 67%; top: 49%;"></span>
+          <span style="left: 76%; top: 47%;"></span>
+          <span style="left: 14%; top: 52%;"></span>
+          <span style="left: 24%; top: 53%;"></span>
+          <span style="left: 35%; top: 52%;"></span>
+          <span style="left: 46%; top: 53%;"></span>
+          <span style="left: 57%; top: 52%;"></span>
+          <span style="left: 68%; top: 53%;"></span>
+          <span style="left: 79%; top: 52%;"></span>
+          <span style="left: 89%; top: 53%;"></span>
+        </div>
+      </div>
+      <div class="sun"></div>
+      <div class="cloud" style="top: 8%; animation-duration: 34s; animation-delay: -10s;"></div>
+      <div class="cloud" style="top: 18%; animation-duration: 28s; animation-delay: -18s;"></div>
+      <div class="cloud" style="top: 26%; animation-duration: 40s; animation-delay: -24s;"></div>
+      <div class="cloud" style="top: 14%; animation-duration: 36s; animation-delay: -30s;"></div>
+    </div>
+
+    <div class="mountain" style="left: 16%; width: 20%; height: 31%;"></div>
+    <div class="mountain" style="left: 40%; width: 24%; height: 39%;"></div>
+    <div class="mountain" style="left: 62%; width: 25%; height: 36%;"></div>
+
+    <div class="layer land">
+      <div class="water" id="lake-left"></div>
+      <div class="water" id="lake-right"></div>
+      <div class="boat"></div>
+
+      <div class="tree" style="left: 3%; top: 20%;"></div>
+      <div class="tree" style="left: 9%; top: 12%;"></div>
+      <div class="tree" style="left: 15%; top: 18%;"></div>
+      <div class="tree" style="left: 22%; top: 14%;"></div>
+      <div class="tree" style="left: 34%; top: 16%;"></div>
+      <div class="tree" style="left: 41%; top: 19%;"></div>
+      <div class="tree" style="left: 47%; top: 13%;"></div>
+      <div class="tree" style="left: 59%; top: 12%;"></div>
+      <div class="tree" style="left: 66%; top: 16%;"></div>
+      <div class="tree" style="left: 72%; top: 13%;"></div>
+      <div class="tree" style="left: 86%; top: 14%;"></div>
+      <div class="tree" style="left: 92%; top: 20%;"></div>
+      <div class="tree" style="left: 32%; top: 34%;"></div>
+      <div class="tree" style="left: 63%; top: 34%;"></div>
+      <div class="tree" style="left: 76%; top: 37%;"></div>
+
+      <div class="bush" style="left: 24%; top: 67%;"></div>
+      <div class="bush" style="left: 35%; top: 71%;"></div>
+      <div class="bush" style="left: 61%; top: 70%;"></div>
+      <div class="bush" style="left: 86%; top: 68%;"></div>
+      <div class="bush" style="left: 9%; top: 73%;"></div>
+      <div class="bush" style="left: 5%; top: 46%;"></div>
+      <div class="bush" style="left: 11%; top: 42%;"></div>
+      <div class="bush" style="left: 16%; top: 47%;"></div>
+      <div class="bush" style="left: 21%; top: 43%;"></div>
+      <div class="bush" style="left: 31%; top: 76%;"></div>
+      <div class="bush" style="left: 54%; top: 75%;"></div>
+      <div class="bush" style="left: 76%; top: 74%;"></div>
+
+      <div class="rock" style="left: 83%; top: 41%;"></div>
+      <div class="rock small" style="left: 88%; top: 39%;"></div>
+      <div class="rock small" style="left: 92%; top: 43%;"></div>
+      <div class="rock small" style="left: 85%; top: 45%;"></div>
+      <div class="rock" style="left: 89%; top: 46%;"></div>
+      <div class="rock small" style="left: 94%; top: 46%;"></div>
+      <div class="rock" style="left: 90%; top: 86%;"></div>
+      <div class="rock small" style="left: 94%; top: 88%;"></div>
+      <div class="rock small" style="left: 87%; top: 89%;"></div>
+
+      <div class="flower pink" style="left: 11%; top: 80%;"></div>
+      <div class="flower yellow" style="left: 15%; top: 83%;"></div>
+      <div class="flower blue" style="left: 22%; top: 79%;"></div>
+      <div class="flower yellow" style="left: 6%; top: 61%;"></div>
+      <div class="flower pink" style="left: 8%; top: 58%;"></div>
+      <div class="flower blue" style="left: 12%; top: 59%;"></div>
+      <div class="flower yellow" style="left: 26%; top: 60%;"></div>
+      <div class="flower pink" style="left: 29%; top: 63%;"></div>
+      <div class="flower blue" style="left: 30%; top: 67%;"></div>
+      <div class="flower yellow" style="left: 7%; top: 74%;"></div>
+      <div class="flower pink" style="left: 10%; top: 76%;"></div>
+      <div class="flower blue" style="left: 25%; top: 74%;"></div>
+      <div class="flower pink" style="left: 27%; top: 83%;"></div>
+      <div class="flower yellow" style="left: 34%; top: 82%;"></div>
+      <div class="flower blue" style="left: 41%; top: 80%;"></div>
+      <div class="flower pink" style="left: 49%; top: 84%;"></div>
+      <div class="flower yellow" style="left: 58%; top: 81%;"></div>
+      <div class="flower blue" style="left: 66%; top: 83%;"></div>
+      <div class="flower pink" style="left: 74%; top: 82%;"></div>
+      <div class="flower yellow" style="left: 82%; top: 80%;"></div>
+      <div class="flower blue" style="left: 89%; top: 83%;"></div>
+    </div>
+
+    <div class="layer shape-layer" id="shape-layer"></div>
+
+    <div class="modal" id="circle-modal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <span>Creature Info</span>
+          <button class="close-btn" id="modal-close" aria-label="Close">X</button>
+        </div>
+        <div class="modal-body">
+          <img class="portrait" id="modal-photo" alt="Circle portrait" />
+          <div class="name-box" id="modal-name">---</div>
+        </div>
+        <div class="name-editor">
+          <input class="name-input" id="modal-name-input" type="text" maxlength="24" placeholder="Type a custom name" />
+          <button class="name-btn" id="modal-name-save" type="button">Save</button>
+          <button class="name-btn" id="modal-name-reset" type="button">Reset</button>
+        </div>
+        <div class="modal-actions">
+          <button class="sound-btn" id="modal-sound-btn" type="button">Listen to It!</button>
+        </div>
+        <div class="modal-tip">Click outside or press Esc to close</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scene = document.getElementById("scene");
+    const clockTitle = document.getElementById("clock-title");
+    const shapeLayer = document.getElementById("shape-layer");
+    const modal = document.getElementById("circle-modal");
+    const modalPhoto = document.getElementById("modal-photo");
+    const modalName = document.getElementById("modal-name");
+    const modalClose = document.getElementById("modal-close");
+    const modalNameInput = document.getElementById("modal-name-input");
+    const modalNameSave = document.getElementById("modal-name-save");
+    const modalNameReset = document.getElementById("modal-name-reset");
+    const modalSoundBtn = document.getElementById("modal-sound-btn");
+
+    const WATER_IDS = ["lake-left", "lake-right"];
+    const BIG_CIRCLE_SIZE = 28;
+    const WARM_SMALL_CIRCLE_SIZE = 23;
+    const ASSET_VERSION = "v2";
+
+    const BIG_CIRCLE_PROFILES = [
+      { name: "Coral King", photo: `PJimages/w1.png?${ASSET_VERSION}`, sound: "PJsounds/w1.wav", tones: [392, 523, 659] },
+      { name: "Moon Splash", photo: `PJimages/w2.png?${ASSET_VERSION}`, sound: "PJsounds/w2.wav", tones: [349, 440, 587] },
+      { name: "Golden Drift", photo: `PJimages/w3.png?${ASSET_VERSION}`, sound: "PJsounds/w3.wav", tones: [330, 494, 740] }
+    ];
+
+    const WARM_SMALL_CIRCLE_PROFILES = [
+      { key: "p1", name: "Ruby Pebble", photo: `PJimages/p1.png?${ASSET_VERSION}`, sound: "PJsounds/p1.wav", tones: [294, 349, 440] },
+      { key: "p2", name: "Sunny Dot", photo: `PJimages/p2.png?${ASSET_VERSION}`, sound: "PJsounds/p2.wav", tones: [330, 392, 494] }
+    ];
+
+    const COOL_SMALL_CIRCLE_PROFILES = [
+      { key: "a1", name: "Lilac Wave", photo: `PJimages/a1.png?${ASSET_VERSION}`, sound: "PJsounds/a1.wav", tones: [262, 330, 392] },
+      { key: "a2", name: "Violet Bubble", photo: `PJimages/a2.png?${ASSET_VERSION}`, sound: "PJsounds/a2.wav", tones: [247, 311, 370] },
+      { key: "a3", name: "Plum Ripple", photo: `PJimages/a3.png?${ASSET_VERSION}`, sound: "PJsounds/a3.wav", tones: [278, 349, 415] }
+    ];
+
+    const SHAPE_CONFIG = [
+      { type: "triangle", count: 10, speed: 0.54 },
+      { type: "square", count: 10, speed: 0.44 },
+      { type: "circle", count: 8, speed: 0.50 },
+      { type: "pentagon", count: 7, speed: 0.60 }
+    ];
+
+    const state = [];
+    let circleCounter = 0;
+    let warmSmallCounter = 0;
+    let coolSmallCounter = 0;
+    let activeCircle = null;
+    let audioCtx = null;
+    let activeSound = null;
+    const activeOscillators = [];
+
+    function randomBetween(min, max) { return min + Math.random() * (max - min); }
+
+    const zones = {
+      sky: () => {
+        const s = document.getElementById("sky-area").getBoundingClientRect();
+        const p = scene.getBoundingClientRect();
+        return { x: s.left - p.left, y: s.top - p.top, width: s.width, height: s.height };
+      },
+      land: () => {
+        const p = scene.getBoundingClientRect();
+        const waters = WATER_IDS.map((id) => {
+          const r = document.getElementById(id).getBoundingClientRect();
+          return { x: r.left - p.left, y: r.top - p.top, width: r.width, height: r.height };
+        });
+        return { x: 0, y: p.height * 0.54, width: p.width, height: p.height * 0.46, waters };
+      },
+      waterRects: () => {
+        const p = scene.getBoundingClientRect();
+        return WATER_IDS.map((id) => {
+          const r = document.getElementById(id).getBoundingClientRect();
+          return { x: r.left - p.left, y: r.top - p.top, width: r.width, height: r.height };
+        });
+      }
+    };
+
+    function rectContains(rect, x, y, size = 20) {
+      return x >= rect.x && y >= rect.y && x + size <= rect.x + rect.width && y + size <= rect.y + rect.height;
+    }
+
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function overlapsAnyWater(x, y, size = 20) {
+      const candidate = { x, y, width: size, height: size };
+      return zones.waterRects().some((water) => rectsOverlap(candidate, water));
+    }
+
+    function randomInRect(rect, size = 20) {
+      return {
+        x: randomBetween(rect.x + 2, rect.x + rect.width - size - 2),
+        y: randomBetween(rect.y + 2, rect.y + rect.height - size - 2)
+      };
+    }
+
+    function randomLandPoint(size = 20) {
+      const land = zones.land();
+      const point = randomInRect(land, size);
+      if (land.waters.some((w) => rectContains(w, point.x, point.y, size))) return randomLandPoint(size);
+      return point;
+    }
+
+    function randomWaterPoint(size = 20, forcedZoneIndex = null) {
+      const rects = zones.waterRects();
+      const zoneIndex = forcedZoneIndex === null ? Math.floor(Math.random() * rects.length) : forcedZoneIndex;
+      const zone = rects[zoneIndex];
+      const point = randomInRect(zone, size);
+      point.zoneIndex = zoneIndex;
+      return point;
+    }
+
+    function randomSkyPoint(size = 20) { return randomInRect(zones.sky(), size); }
+
+    function randomAnyPoint(size = 20) {
+      return randomInRect({ x: 0, y: 0, width: scene.clientWidth, height: scene.clientHeight }, size);
+    }
+
+    function pickTarget(type, size = 20) {
+      if (type === "triangle") return randomSkyPoint(size);
+      if (type === "square") return randomLandPoint(size);
+      if (type === "circle") return randomWaterPoint(size);
+      return randomAnyPoint(size);
+    }
+
+    function openCircleModal(shape) {
+      activeCircle = shape;
+      modalName.textContent = shape.customName || shape.originalName;
+      modalPhoto.src = shape.creaturePhoto;
+      modalNameInput.value = shape.customName || "";
+      modalNameInput.placeholder = `Original: ${shape.originalName}`;
+      const hasSound = Boolean(shape.soundFile || shape.soundTones);
+      modalSoundBtn.style.display = hasSound ? "inline-block" : "none";
+      modal.classList.add("show");
+    }
+
+    function stopActiveSound() {
+      if (activeSound) {
+        activeSound.pause();
+        activeSound.currentTime = 0;
+        activeSound = null;
+      }
+      while (activeOscillators.length > 0) {
+        const osc = activeOscillators.pop();
+        try { osc.stop(); } catch (_) {}
+      }
+    }
+
+    function closeCircleModal() {
+      stopActiveSound();
+      activeCircle = null;
+      modal.classList.remove("show");
+    }
+
+    function playTone(freq, startAt, duration, gainValue = 0.05) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(freq, startAt);
+      gain.gain.setValueAtTime(0, startAt);
+      gain.gain.linearRampToValueAtTime(gainValue, startAt + 0.01);
+      gain.gain.linearRampToValueAtTime(0, startAt + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      activeOscillators.push(osc);
+      osc.start(startAt);
+      osc.stop(startAt + duration + 0.02);
+      osc.onended = () => {
+        const idx = activeOscillators.indexOf(osc);
+        if (idx >= 0) activeOscillators.splice(idx, 1);
+      };
+    }
+
+    function playCircleSound(shape) {
+      if (!shape) return;
+      stopActiveSound();
+
+      if (shape.soundFile) {
+        const audio = new Audio(shape.soundFile);
+        activeSound = audio;
+        audio.play().catch(() => {
+          activeSound = null;
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const tones = shape.soundTones || [392, 523, 659];
+          const base = audioCtx.currentTime + 0.02;
+          playTone(tones[0], base, 0.08);
+          playTone(tones[1], base + 0.09, 0.08);
+          playTone(tones[2], base + 0.18, 0.12);
+        });
+        audio.onended = () => {
+          if (activeSound === audio) activeSound = null;
+        };
+        return;
+      }
+
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const tones = shape.soundTones || [392, 523, 659];
+      const base = audioCtx.currentTime + 0.02;
+      playTone(tones[0], base, 0.08);
+      playTone(tones[1], base + 0.09, 0.08);
+      playTone(tones[2], base + 0.18, 0.12);
+    }
+
+    function saveCustomName() {
+      if (!activeCircle) return;
+      const typed = modalNameInput.value.trim();
+      activeCircle.customName = typed || null;
+      modalName.textContent = activeCircle.customName || activeCircle.originalName;
+    }
+
+    function resetCustomName() {
+      if (!activeCircle) return;
+      activeCircle.customName = null;
+      modalNameInput.value = "";
+      modalName.textContent = activeCircle.originalName;
+    }
+
+    function createShape(type, speed, sizeOverride = null) {
+      const el = document.createElement("div");
+      el.className = `shape ${type}`;
+      const size = sizeOverride ?? (type === "triangle" ? 22 : type === "pentagon" ? 24 : 20);
+      const start = type === "circle" ? randomWaterPoint(size) : pickTarget(type, size);
+      const target = type === "circle" ? randomWaterPoint(size, start.zoneIndex) : pickTarget(type, size);
+
+      if (type === "circle") {
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        if (size === BIG_CIRCLE_SIZE) el.classList.add("circle-big");
+        else if (size === WARM_SMALL_CIRCLE_SIZE) el.classList.add("circle-small-warm");
+        else el.classList.add("circle-small");
+      }
+      shapeLayer.appendChild(el);
+
+      let creatureName = null;
+      let creatureKey = null;
+      let creaturePhoto = null;
+      let soundFile = null;
+      let soundTones = null;
+      let isBigCircle = false;
+
+      if (type === "circle") {
+        const idx = circleCounter;
+        if (size === BIG_CIRCLE_SIZE && idx < BIG_CIRCLE_PROFILES.length) {
+          const profile = BIG_CIRCLE_PROFILES[idx];
+          creatureName = profile.name;
+          creaturePhoto = profile.photo;
+          soundFile = profile.sound;
+          soundTones = profile.tones;
+          isBigCircle = true;
+        } else if (size === WARM_SMALL_CIRCLE_SIZE) {
+          const profile = WARM_SMALL_CIRCLE_PROFILES[warmSmallCounter % WARM_SMALL_CIRCLE_PROFILES.length];
+          creatureKey = profile.key;
+          creatureName = profile.name;
+          creaturePhoto = profile.photo;
+          soundFile = profile.sound;
+          soundTones = profile.tones;
+          warmSmallCounter += 1;
+        } else {
+          const profile = COOL_SMALL_CIRCLE_PROFILES[coolSmallCounter % COOL_SMALL_CIRCLE_PROFILES.length];
+          creatureKey = profile.key;
+          creatureName = profile.name;
+          creaturePhoto = profile.photo;
+          soundFile = profile.sound;
+          soundTones = profile.tones;
+          coolSmallCounter += 1;
+        }
+        circleCounter += 1;
+      }
+
+      if (type === "circle" && creatureKey === "p2") {
+        el.classList.add("circle-p2");
+      }
+
+      const shape = {
+        el,
+        type,
+        x: start.x,
+        y: start.y,
+        tx: target.x,
+        ty: target.y,
+        speed: speed * randomBetween(0.72, 1.28),
+        wobble: randomBetween(0, Math.PI * 2),
+        size,
+        waterZoneIndex: type === "circle" ? start.zoneIndex : null,
+        teleportFrames: 0,
+        teleportTarget: null,
+        originalName: creatureName,
+        customName: null,
+        creatureName,
+        creaturePhoto,
+        soundFile,
+        soundTones,
+        isBigCircle
+      };
+
+      if (type === "circle") {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openCircleModal(shape);
+        });
+      }
+
+      return shape;
+    }
+
+    function distance(a, b, c, d) { return Math.hypot(c - a, d - b); }
+
+    function updateShape(s, t) {
+      if (s.type === "circle" && s.teleportFrames > 0) {
+        s.teleportFrames -= 1;
+        if (s.teleportFrames === 6 && s.teleportTarget) {
+          s.x = s.teleportTarget.x;
+          s.y = s.teleportTarget.y;
+          s.tx = s.teleportTarget.tx;
+          s.ty = s.teleportTarget.ty;
+          s.waterZoneIndex = s.teleportTarget.zoneIndex;
+        }
+        s.el.style.opacity = s.teleportFrames > 6 ? "0" : "1";
+        s.wobble += 0.03;
+        const tX = Math.sin(t * 0.003 + s.wobble) * 0.8;
+        const tY = Math.cos(t * 0.003 + s.wobble) * 0.6;
+        s.el.style.transform = `translate(${s.x + tX}px, ${s.y + tY}px)`;
+        if (s.teleportFrames === 0) s.teleportTarget = null;
+        return;
+      }
+
+      const d = distance(s.x, s.y, s.tx, s.ty);
+      if (d < 2) {
+        if (s.type === "circle") {
+          const shouldSwitchZone = Math.random() < 0.42;
+          if (shouldSwitchZone) {
+            const waterRects = zones.waterRects();
+            let nextZone = s.waterZoneIndex;
+            while (nextZone === s.waterZoneIndex && waterRects.length > 1) {
+              nextZone = Math.floor(Math.random() * waterRects.length);
+            }
+            const nextSpawn = randomWaterPoint(s.size, nextZone);
+            const nextTarget = randomWaterPoint(s.size, nextZone);
+            s.teleportFrames = 12;
+            s.teleportTarget = {
+              x: nextSpawn.x,
+              y: nextSpawn.y,
+              tx: nextTarget.x,
+              ty: nextTarget.y,
+              zoneIndex: nextZone
+            };
+          } else {
+            const nextLocal = randomWaterPoint(s.size, s.waterZoneIndex);
+            s.tx = nextLocal.x;
+            s.ty = nextLocal.y;
+          }
+        } else {
+          const next = pickTarget(s.type, s.size);
+          s.tx = next.x;
+          s.ty = next.y;
+        }
+      } else {
+        const step = s.speed;
+        const nextX = s.x + ((s.tx - s.x) / d) * step;
+        const nextY = s.y + ((s.ty - s.y) / d) * step;
+
+        if (s.type === "square" && overlapsAnyWater(nextX, nextY, s.size)) {
+          const nextLand = randomLandPoint(s.size);
+          s.tx = nextLand.x;
+          s.ty = nextLand.y;
+        } else {
+          s.x = nextX;
+          s.y = nextY;
+        }
+      }
+
+      s.wobble += 0.06;
+      let wX = Math.sin(t * 0.002 + s.wobble) * 1.6;
+      let wY = Math.cos(t * 0.002 + s.wobble * 0.6) * 1.2;
+      if (s.type === "triangle") wY -= 0.6;
+      if (s.type === "circle") wY += 0.7;
+      s.el.style.opacity = "1";
+      s.el.style.transform = `translate(${s.x + wX}px, ${s.y + wY}px)`;
+    }
+
+    function buildScene() {
+      state.length = 0;
+      shapeLayer.innerHTML = "";
+      circleCounter = 0;
+      warmSmallCounter = 0;
+      coolSmallCounter = 0;
+
+      SHAPE_CONFIG.forEach(({ type, count, speed }) => {
+        for (let i = 0; i < count; i += 1) {
+          if (type === "circle") {
+            const bigCircles = 3;
+            const warmSmallCircles = 2;
+            let size = 20;
+            if (i < bigCircles) size = BIG_CIRCLE_SIZE;
+            else if (i < bigCircles + warmSmallCircles) size = WARM_SMALL_CIRCLE_SIZE;
+            state.push(createShape(type, speed, size));
+          } else {
+            state.push(createShape(type, speed));
+          }
+        }
+      });
+    }
+
+    function animate(t) {
+      for (const s of state) updateShape(s, t);
+      requestAnimationFrame(animate);
+    }
+
+    function getNightStrength(now) {
+      const minutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+      if (minutes >= 1050 && minutes < 1110) return (minutes - 1050) / 60;
+      if (minutes >= 1110 || minutes < 330) return 1;
+      if (minutes >= 330 && minutes < 390) return 1 - (minutes - 330) / 60;
+      return 0;
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      clockTitle.textContent = `${hh}:${mm}:${ss}`;
+
+      const nightStrength = getNightStrength(now);
+      scene.style.setProperty("--night-strength", nightStrength.toFixed(3));
+      scene.style.setProperty("--sun-alpha", (1 - nightStrength).toFixed(3));
+      scene.style.setProperty("--moon-alpha", nightStrength.toFixed(3));
+
+      scene.classList.remove("day", "twilight", "night");
+      document.body.classList.remove("day", "twilight", "night");
+
+      if (nightStrength <= 0.001) {
+        scene.classList.add("day");
+        document.body.classList.add("day");
+      } else if (nightStrength >= 0.999) {
+        scene.classList.add("night");
+        document.body.classList.add("night");
+      } else {
+        scene.classList.add("twilight");
+        document.body.classList.add("twilight");
+      }
+    }
+
+    modalNameSave.addEventListener("click", saveCustomName);
+    modalNameReset.addEventListener("click", resetCustomName);
+    modalNameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") saveCustomName();
+    });
+
+    modalSoundBtn.addEventListener("click", () => {
+      if (activeCircle) playCircleSound(activeCircle);
+    });
+
+    modalClose.addEventListener("click", closeCircleModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeCircleModal();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeCircleModal();
+    });
+
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(buildScene, 120);
+    });
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    buildScene();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
