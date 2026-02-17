@@ -1497,9 +1497,9 @@
 
     function getNightStrength(now) {
       const minutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-      if (minutes >= 1050 && minutes < 1110) return (minutes - 1050) / 60;
-      if (minutes >= 1110 || minutes < 330) return 1;
-      if (minutes >= 330 && minutes < 390) return 1 - (minutes - 330) / 60;
+      if (minutes >= 1020 && minutes < 1080) return (minutes - 1020) / 60;
+      if (minutes >= 1080 || minutes < 420) return 1;
+      if (minutes >= 420 && minutes < 480) return 1 - (minutes - 420) / 60;
       return 0;
     }
 
