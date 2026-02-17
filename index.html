@@ -454,9 +454,49 @@
       border-left: 10px solid transparent;
       border-right: 10px solid transparent;
       border-bottom: 18px solid var(--triangle);
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .triangle.triangle-big {
+      border-bottom-color: #b9efb8;
+    }
+
+    .triangle.triangle-mid {
+      border-bottom-color: #f3bfd2;
+    }
+
+    .triangle.triangle-small {
+      border-bottom-color: #b85b5b;
     }
 
     .square { background: var(--square); border: 2px solid #6e8761; }
+    .square { pointer-events: auto; cursor: pointer; }
+
+    .square.square-big-a {
+      background: #e5a3a0;
+      border-color: #9a5652;
+    }
+
+    .square.square-big-b {
+      background: #8dcfbe;
+      border-color: #3f7466;
+    }
+
+    .square.square-small-brown {
+      background: #be9b78;
+      border-color: #7a5c40;
+    }
+
+    .square.square-small-yellow {
+      background: #e7d488;
+      border-color: #9f8a3f;
+    }
+
+    .square.square-small-gray {
+      background: #b8b8bd;
+      border-color: #707077;
+    }
 
     .circle {
       background: var(--circle);
@@ -500,6 +540,8 @@
       background: var(--pentagon);
       border: 2px solid #9a8f6d;
       clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+      pointer-events: auto;
+      cursor: pointer;
     }
 
     .title {
@@ -835,11 +877,96 @@
     const BIG_CIRCLE_SIZE = 28;
     const WARM_SMALL_CIRCLE_SIZE = 23;
     const ASSET_VERSION = "v2";
+    const TRIANGLE_BASE_SIZE = 22;
+    const TRIANGLE_MID_SIZE = 27;
+    const TRIANGLE_BIG_SIZE = 33;
+    const SQUARE_BASE_SIZE = 20;
+    const SQUARE_MID_SIZE = 25;
+    const SQUARE_BIG_SIZE = 29;
+    const PENTAGON_SIZE_SEQUENCE = [18, 20, 22, 24, 26, 28, 30];
+    const PENTAGON_COLOR_SEQUENCE = [
+      { fill: "#f4e4a8", border: "#8c7b43" },
+      { fill: "#f2c9a2", border: "#9a6845" },
+      { fill: "#e9b4b8", border: "#8f545d" },
+      { fill: "#c9c2ec", border: "#665f9e" },
+      { fill: "#b7dcf0", border: "#4f768d" },
+      { fill: "#b9e3bf", border: "#4f7d56" },
+      { fill: "#f0d2e9", border: "#8a5f83" }
+    ];
+
+    const BIG_TRIANGLE_PROFILES = [
+      { name: "Olive Wing I", photo: `PJimages/o1.png?${ASSET_VERSION}`, sound: "PJsounds/o1.wav", tones: [523, 659, 784] },
+      { name: "Olive Wing II", photo: `PJimages/o2.png?${ASSET_VERSION}`, sound: "PJsounds/o2.wav", tones: [587, 740, 880] },
+      { name: "Olive Wing III", photo: `PJimages/o3.png?${ASSET_VERSION}`, sound: "PJsounds/o1.wav", tones: [494, 622, 784] }
+    ];
+
+    const MID_TRIANGLE_PROFILES = [
+      { name: "Blush Wing I", photo: `PJimages/b1.png?${ASSET_VERSION}`, sound: "PJsounds/b1.wav", tones: [587, 740, 880] },
+      { name: "Blush Wing II", photo: `PJimages/b2.png?${ASSET_VERSION}`, sound: "PJsounds/b2.wav", tones: [494, 622, 784] },
+      { name: "Blush Wing III", photo: `PJimages/b3.png?${ASSET_VERSION}`, sound: "PJsounds/b1.wav", tones: [554, 698, 831] },
+      { name: "Blush Wing IV", photo: `PJimages/b4.png?${ASSET_VERSION}`, sound: "PJsounds/b2.wav", tones: [523, 659, 784] },
+      { name: "Blush Wing V", photo: `PJimages/b5.png?${ASSET_VERSION}`, sound: "PJsounds/b1.wav", tones: [466, 587, 698] }
+    ];
+
+    const SMALL_TRIANGLE_PROFILES = [
+      { name: "Dusk Wing I", photo: `PJimages/d1.png?${ASSET_VERSION}`, sound: "PJsounds/d1.wav", tones: [587, 740, 880] },
+      { name: "Dusk Wing II", photo: `PJimages/d2.png?${ASSET_VERSION}`, sound: "PJsounds/d1.wav", tones: [494, 622, 784] }
+    ];
 
     const BIG_CIRCLE_PROFILES = [
       { name: "Coral King", photo: `PJimages/w1.png?${ASSET_VERSION}`, sound: "PJsounds/w1.wav", tones: [392, 523, 659] },
       { name: "Moon Splash", photo: `PJimages/w2.png?${ASSET_VERSION}`, sound: "PJsounds/w2.wav", tones: [349, 440, 587] },
       { name: "Golden Drift", photo: `PJimages/w3.png?${ASSET_VERSION}`, sound: "PJsounds/w3.wav", tones: [330, 494, 740] }
+    ];
+
+    const BLUE_BIG_SQUARE_PROFILES = [
+      { name: "Blue Brick I", photo: `PJimages/e1.png?${ASSET_VERSION}`, sound: "PJsounds/e1.wav", tones: [330, 415, 523] },
+      { name: "Blue Brick II", photo: `PJimages/e2.png?${ASSET_VERSION}`, sound: "PJsounds/e1.wav", tones: [349, 440, 554] }
+    ];
+
+    const RED_BIG_SQUARE_PROFILES = [
+      { name: "Red Brick I", photo: `PJimages/g1.png?${ASSET_VERSION}`, sound: "PJsounds/g1.wav", tones: [294, 370, 440] },
+      { name: "Red Brick II", photo: `PJimages/g2.png?${ASSET_VERSION}`, sound: "PJsounds/g1.wav", tones: [311, 392, 466] }
+    ];
+
+    const MID_SQUARE_PROFILE = {
+      name: "Khaki Block",
+      photo: `PJimages/k1.png?${ASSET_VERSION}`,
+      sound: "PJsounds/k1.wav",
+      tones: [330, 392, 494]
+    };
+
+    const BROWN_SMALL_SQUARE_PROFILES = [
+      { name: "Hazel Tile I", photo: `PJimages/h1.png?${ASSET_VERSION}`, sound: "PJsounds/h1.wav", tones: [277, 349, 415] },
+      { name: "Hazel Tile II", photo: `PJimages/h2.png?${ASSET_VERSION}`, sound: "PJsounds/h2.wav", tones: [294, 370, 440] }
+    ];
+
+    const YELLOW_SMALL_SQUARE_PROFILES = [
+      { name: "Amber Tile I", photo: `PJimages/m1.png?${ASSET_VERSION}`, sound: "PJsounds/m1.wav", tones: [330, 415, 494] },
+      { name: "Amber Tile II", photo: `PJimages/m2.png?${ASSET_VERSION}`, sound: "PJsounds/m1.wav", tones: [349, 440, 523] }
+    ];
+
+    const GRAY_SQUARE_PROFILE = {
+      name: "Fog Block",
+      photo: `PJimages/f1.png?${ASSET_VERSION}`,
+      sound: "PJsounds/f1.wav",
+      tones: [247, 311, 370]
+    };
+
+    const SQUARE_GENERIC_PROFILES = [
+      { name: "Terra Block", photo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23b9d98a'/%3E%3Crect x='20' y='20' width='56' height='56' fill='%23d8f4c6' stroke='%234a6a45' stroke-width='4'/%3E%3C/svg%3E", tones: [262, 330, 392] },
+      { name: "Moss Tile", photo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23a9cc7a'/%3E%3Crect x='20' y='20' width='56' height='56' fill='%23cfe7ad' stroke='%234f6e40' stroke-width='4'/%3E%3C/svg%3E", tones: [294, 370, 440] },
+      { name: "Field Cube", photo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23a0c372'/%3E%3Crect x='20' y='20' width='56' height='56' fill='%23c5e09f' stroke='%234d6a3d' stroke-width='4'/%3E%3C/svg%3E", tones: [330, 415, 494] }
+    ];
+
+    const PENTAGON_PROFILES = [
+      { name: "Penta A", photo: `PJimages/pa1.png?${ASSET_VERSION}`, sound: "PJsounds/pa1.wav", tones: [392, 494, 587] },
+      { name: "Penta B", photo: `PJimages/pa2.png?${ASSET_VERSION}`, sound: "PJsounds/pa2.wav", tones: [415, 523, 622] },
+      { name: "Penta C", photo: `PJimages/pa3.png?${ASSET_VERSION}`, sound: "PJsounds/pa1.wav", tones: [349, 440, 523] },
+      { name: "Penta D", photo: `PJimages/pa4.png?${ASSET_VERSION}`, sound: "PJsounds/pa1.wav", tones: [330, 415, 494] },
+      { name: "Penta E", photo: `PJimages/pa5.png?${ASSET_VERSION}`, sound: "PJsounds/pa2.wav", tones: [311, 392, 466] },
+      { name: "Penta F", photo: `PJimages/pa6.png?${ASSET_VERSION}`, sound: "PJsounds/pa2.wav", tones: [294, 370, 440] },
+      { name: "Penta G", photo: `PJimages/pa7.png?${ASSET_VERSION}`, sound: "PJsounds/pa1.wav", tones: [277, 349, 415] }
     ];
 
     const WARM_SMALL_CIRCLE_PROFILES = [
@@ -862,9 +989,21 @@
 
     const state = [];
     let circleCounter = 0;
+    let triangleCounter = 0;
+    let bigTriangleCounter = 0;
+    let midTriangleCounter = 0;
+    let bigSquareCounter = 0;
+    let smallSquareCounter = 0;
+    let blueBigSquareCounter = 0;
+    let redBigSquareCounter = 0;
+    let brownSmallSquareCounter = 0;
+    let yellowSmallSquareCounter = 0;
+    let squareProfileCounter = 0;
+    let pentagonProfileCounter = 0;
+    let pentagonSpawnCounter = 0;
     let warmSmallCounter = 0;
     let coolSmallCounter = 0;
-    let activeCircle = null;
+    let activeCreature = null;
     let audioCtx = null;
     let activeSound = null;
     const activeOscillators = [];
@@ -943,8 +1082,8 @@
       return randomAnyPoint(size);
     }
 
-    function openCircleModal(shape) {
-      activeCircle = shape;
+    function openCreatureModal(shape) {
+      activeCreature = shape;
       modalName.textContent = shape.customName || shape.originalName;
       modalPhoto.src = shape.creaturePhoto;
       modalNameInput.value = shape.customName || "";
@@ -966,9 +1105,9 @@
       }
     }
 
-    function closeCircleModal() {
+    function closeCreatureModal() {
       stopActiveSound();
-      activeCircle = null;
+      activeCreature = null;
       modal.classList.remove("show");
     }
 
@@ -1023,23 +1162,28 @@
     }
 
     function saveCustomName() {
-      if (!activeCircle) return;
+      if (!activeCreature) return;
       const typed = modalNameInput.value.trim();
-      activeCircle.customName = typed || null;
-      modalName.textContent = activeCircle.customName || activeCircle.originalName;
+      activeCreature.customName = typed || null;
+      modalName.textContent = activeCreature.customName || activeCreature.originalName;
     }
 
     function resetCustomName() {
-      if (!activeCircle) return;
-      activeCircle.customName = null;
+      if (!activeCreature) return;
+      activeCreature.customName = null;
       modalNameInput.value = "";
-      modalName.textContent = activeCircle.originalName;
+      modalName.textContent = activeCreature.originalName;
     }
 
     function createShape(type, speed, sizeOverride = null) {
       const el = document.createElement("div");
       el.className = `shape ${type}`;
-      const size = sizeOverride ?? (type === "triangle" ? 22 : type === "pentagon" ? 24 : 20);
+      let size = sizeOverride ?? (type === "triangle" ? TRIANGLE_BASE_SIZE : type === "pentagon" ? 24 : 20);
+      let pentagonStyleIndex = null;
+      if (type === "pentagon") {
+        pentagonStyleIndex = pentagonSpawnCounter % PENTAGON_SIZE_SEQUENCE.length;
+        if (sizeOverride === null) size = PENTAGON_SIZE_SEQUENCE[pentagonStyleIndex];
+      }
       const start = type === "circle" ? randomWaterPoint(size) : pickTarget(type, size);
       const target = type === "circle" ? randomWaterPoint(size, start.zoneIndex) : pickTarget(type, size);
 
@@ -1049,6 +1193,38 @@
         if (size === BIG_CIRCLE_SIZE) el.classList.add("circle-big");
         else if (size === WARM_SMALL_CIRCLE_SIZE) el.classList.add("circle-small-warm");
         else el.classList.add("circle-small");
+      } else if (type === "square") {
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        if (size === SQUARE_BIG_SIZE) {
+          if (bigSquareCounter < 2) el.classList.add("square-big-a");
+          else el.classList.add("square-big-b");
+          bigSquareCounter += 1;
+        } else if (size === SQUARE_MID_SIZE) {
+          el.classList.add("square-mid");
+        } else {
+          if (smallSquareCounter < 2) el.classList.add("square-small-brown");
+          else if (smallSquareCounter < 4) el.classList.add("square-small-yellow");
+          else if (smallSquareCounter < 5) el.classList.add("square-small-gray");
+          smallSquareCounter += 1;
+        }
+      } else if (type === "triangle") {
+        if (size === TRIANGLE_BIG_SIZE) el.classList.add("triangle-big");
+        else if (size === TRIANGLE_MID_SIZE) el.classList.add("triangle-mid");
+        else el.classList.add("triangle-small");
+        const triHalf = Math.round(size * 0.45);
+        const triHeight = Math.round(size * 0.82);
+        el.style.borderLeftWidth = `${triHalf}px`;
+        el.style.borderRightWidth = `${triHalf}px`;
+        el.style.borderBottomWidth = `${triHeight}px`;
+      } else if (type === "pentagon") {
+        const idx = pentagonStyleIndex ?? (pentagonSpawnCounter % PENTAGON_SIZE_SEQUENCE.length);
+        const palette = PENTAGON_COLOR_SEQUENCE[idx % PENTAGON_COLOR_SEQUENCE.length];
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        el.style.background = palette.fill;
+        el.style.borderColor = palette.border;
+        pentagonSpawnCounter += 1;
       }
       shapeLayer.appendChild(el);
 
@@ -1086,6 +1262,72 @@
           coolSmallCounter += 1;
         }
         circleCounter += 1;
+      } else if (type === "triangle") {
+        const isBigTriangle = size === TRIANGLE_BIG_SIZE;
+        const isMidTriangle = size === TRIANGLE_MID_SIZE;
+        const profile = isBigTriangle
+          ? BIG_TRIANGLE_PROFILES[bigTriangleCounter % BIG_TRIANGLE_PROFILES.length]
+          : isMidTriangle
+            ? MID_TRIANGLE_PROFILES[midTriangleCounter % MID_TRIANGLE_PROFILES.length]
+            : SMALL_TRIANGLE_PROFILES[triangleCounter % SMALL_TRIANGLE_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundFile = profile.sound || null;
+        soundTones = profile.tones;
+        if (isBigTriangle) bigTriangleCounter += 1;
+        if (isMidTriangle) midTriangleCounter += 1;
+        triangleCounter += 1;
+      } else if (type === "square" && el.classList.contains("square-big-a")) {
+        const profile = RED_BIG_SQUARE_PROFILES[redBigSquareCounter % RED_BIG_SQUARE_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundFile = profile.sound;
+        soundTones = profile.tones;
+        redBigSquareCounter += 1;
+      } else if (type === "square" && el.classList.contains("square-big-b")) {
+        const profile = BLUE_BIG_SQUARE_PROFILES[blueBigSquareCounter % BLUE_BIG_SQUARE_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundFile = profile.sound;
+        soundTones = profile.tones;
+        blueBigSquareCounter += 1;
+      } else if (type === "square" && el.classList.contains("square-mid")) {
+        creatureName = MID_SQUARE_PROFILE.name;
+        creaturePhoto = MID_SQUARE_PROFILE.photo;
+        soundFile = MID_SQUARE_PROFILE.sound;
+        soundTones = MID_SQUARE_PROFILE.tones;
+      } else if (type === "square" && el.classList.contains("square-small-brown")) {
+        const profile = BROWN_SMALL_SQUARE_PROFILES[brownSmallSquareCounter % BROWN_SMALL_SQUARE_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundFile = profile.sound;
+        soundTones = profile.tones;
+        brownSmallSquareCounter += 1;
+      } else if (type === "square" && el.classList.contains("square-small-yellow")) {
+        const profile = YELLOW_SMALL_SQUARE_PROFILES[yellowSmallSquareCounter % YELLOW_SMALL_SQUARE_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundFile = profile.sound;
+        soundTones = profile.tones;
+        yellowSmallSquareCounter += 1;
+      } else if (type === "square" && el.classList.contains("square-small-gray")) {
+        creatureName = GRAY_SQUARE_PROFILE.name;
+        creaturePhoto = GRAY_SQUARE_PROFILE.photo;
+        soundFile = GRAY_SQUARE_PROFILE.sound;
+        soundTones = GRAY_SQUARE_PROFILE.tones;
+      } else if (type === "square") {
+        const profile = SQUARE_GENERIC_PROFILES[squareProfileCounter % SQUARE_GENERIC_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundTones = profile.tones;
+        squareProfileCounter += 1;
+      } else if (type === "pentagon") {
+        const profile = PENTAGON_PROFILES[pentagonProfileCounter % PENTAGON_PROFILES.length];
+        creatureName = profile.name;
+        creaturePhoto = profile.photo;
+        soundFile = profile.sound || null;
+        soundTones = profile.tones;
+        pentagonProfileCounter += 1;
       }
 
       if (type === "circle" && creatureKey === "p2") {
@@ -1114,10 +1356,10 @@
         isBigCircle
       };
 
-      if (type === "circle") {
+      if (type === "circle" || type === "triangle" || type === "square" || type === "pentagon") {
         el.addEventListener("click", (e) => {
           e.stopPropagation();
-          openCircleModal(shape);
+          openCreatureModal(shape);
         });
       }
 
@@ -1203,12 +1445,38 @@
       state.length = 0;
       shapeLayer.innerHTML = "";
       circleCounter = 0;
+      triangleCounter = 0;
+      bigTriangleCounter = 0;
+      midTriangleCounter = 0;
+      bigSquareCounter = 0;
+      smallSquareCounter = 0;
+      blueBigSquareCounter = 0;
+      redBigSquareCounter = 0;
+      brownSmallSquareCounter = 0;
+      yellowSmallSquareCounter = 0;
+      squareProfileCounter = 0;
+      pentagonProfileCounter = 0;
+      pentagonSpawnCounter = 0;
       warmSmallCounter = 0;
       coolSmallCounter = 0;
 
       SHAPE_CONFIG.forEach(({ type, count, speed }) => {
         for (let i = 0; i < count; i += 1) {
-          if (type === "circle") {
+          if (type === "triangle") {
+            const bigTriangles = 3;
+            const midTriangles = 5;
+            let size = TRIANGLE_BASE_SIZE;
+            if (i < bigTriangles) size = TRIANGLE_BIG_SIZE;
+            else if (i < bigTriangles + midTriangles) size = TRIANGLE_MID_SIZE;
+            state.push(createShape(type, speed, size));
+          } else if (type === "square") {
+            const bigSquares = 4;
+            const midSquares = 1;
+            let size = SQUARE_BASE_SIZE;
+            if (i < bigSquares) size = SQUARE_BIG_SIZE;
+            else if (i < bigSquares + midSquares) size = SQUARE_MID_SIZE;
+            state.push(createShape(type, speed, size));
+          } else if (type === "circle") {
             const bigCircles = 3;
             const warmSmallCircles = 2;
             let size = 20;
@@ -1269,16 +1537,16 @@
     });
 
     modalSoundBtn.addEventListener("click", () => {
-      if (activeCircle) playCircleSound(activeCircle);
+      if (activeCreature) playCircleSound(activeCreature);
     });
 
-    modalClose.addEventListener("click", closeCircleModal);
+    modalClose.addEventListener("click", closeCreatureModal);
     modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeCircleModal();
+      if (e.target === modal) closeCreatureModal();
     });
 
     window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeCircleModal();
+      if (e.key === "Escape") closeCreatureModal();
     });
 
     let resizeTimer;
