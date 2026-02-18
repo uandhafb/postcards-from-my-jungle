@@ -856,7 +856,7 @@
     <div class="modal" id="circle-modal">
       <div class="modal-card">
         <div class="modal-head">
-          <span>Specie Info: isert language here</span>
+          <span id="modal-language-info">Specie Language Info: ---</span>
           <button class="close-btn" id="modal-close" aria-label="Close">X</button>
         </div>
         <div class="modal-body">
@@ -883,6 +883,7 @@
     const modal = document.getElementById("circle-modal");
     const modalPhoto = document.getElementById("modal-photo");
     const modalName = document.getElementById("modal-name");
+    const modalLanguageInfo = document.getElementById("modal-language-info");
     const modalClose = document.getElementById("modal-close");
     const modalNameInput = document.getElementById("modal-name-input");
     const modalNameSave = document.getElementById("modal-name-save");
@@ -1100,6 +1101,7 @@
 
     function openCreatureModal(shape) {
       activeCreature = shape;
+      modalLanguageInfo.textContent = `Specie Language Info: ${shape.specieLanguageInfo || "---"}`;
       modalName.textContent = shape.customName || shape.originalName;
       modalPhoto.src = shape.creaturePhoto;
       modalNameInput.value = shape.customName || "";
@@ -1369,8 +1371,58 @@
         creaturePhoto,
         soundFile,
         soundTones,
-        isBigCircle
+        isBigCircle,
+        specieLanguageInfo: null
       };
+
+      if (type === "circle") {
+        if (size === BIG_CIRCLE_SIZE) {
+          shape.specieLanguageInfo = "Ghoomaaruunn";
+        } else if (creatureKey === "p1") {
+          shape.specieLanguageInfo = "Vashala-oon";
+        } else if (creatureKey === "p2") {
+          shape.specieLanguageInfo = "Drunn-koluu";
+        } else {
+          shape.specieLanguageInfo = "Liiwii-rii-tilu";
+        }
+      } else if (type === "square") {
+        if (el.classList.contains("square-big-b")) {
+          shape.specieLanguageInfo = "Grom-buul draa-vum";
+        } else if (el.classList.contains("square-big-a")) {
+          shape.specieLanguageInfo = "Tikk-tikk rishkilii";
+        } else if (el.classList.contains("square-small-brown")) {
+          shape.specieLanguageInfo = "Rilura vovo-nee";
+        } else if (el.classList.contains("square-small-yellow")) {
+          shape.specieLanguageInfo = "Kek-kek’tu shash";
+        } else if (el.classList.contains("square-small-gray")) {
+          shape.specieLanguageInfo = "Sii’shuraa nithil";
+        } else if (el.classList.contains("square-mid")) {
+          shape.specieLanguageInfo = "Ooruun-dalé";
+        } else {
+          shape.specieLanguageInfo = "Ooruun-dalé";
+        }
+      } else if (type === "triangle") {
+        if (el.classList.contains("triangle-big")) {
+          shape.specieLanguageInfo = "Oolaii-ruum shaa-holoo";
+        } else if (el.classList.contains("triangle-mid")) {
+          shape.specieLanguageInfo = "Hyae-thae sssil-fir";
+        } else {
+          shape.specieLanguageInfo = "Krii-tak Zek-zek";
+        }
+      } else if (type === "pentagon") {
+        const pentagonLanguagePhrases = [
+          "THRAH-eh-leek ZHOH-nye",
+          "THRAH-ssool VAY-h",
+          "THRAH-koon OOL-leth",
+          "THRAH-OOZH NEE-rah",
+          "THRAH-eck SEE-loon",
+          "THRAH-yaahl VETH",
+          "THRAH-om KWAY-lee"
+        ];
+        const pentagonIdx = PENTAGON_PROFILES.findIndex((profile) => profile.name === creatureName);
+        const phraseIdx = pentagonIdx >= 0 ? pentagonIdx % pentagonLanguagePhrases.length : 0;
+        shape.specieLanguageInfo = pentagonLanguagePhrases[phraseIdx];
+      }
 
       if (type === "circle" || type === "triangle" || type === "square" || type === "pentagon") {
         el.addEventListener("click", (e) => {
