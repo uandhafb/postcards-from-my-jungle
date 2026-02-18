@@ -573,6 +573,23 @@
       letter-spacing: 0.2px;
     }
 
+    .music-toggle {
+      position: absolute;
+      right: 12px;
+      top: calc(54% + 10px);
+      z-index: 25;
+      border: 2px solid var(--line);
+      background: #b8cb93;
+      color: #203020;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+
+    .music-toggle:hover { filter: brightness(1.05); }
+
     .modal {
       position: absolute;
       inset: 0;
@@ -725,6 +742,7 @@
   <div class="frame" id="scene">
     <div class="title" id="clock-title">Welcome to Aetherfauna!<br>The time here is:<br>--:--:--</div>
     <div class="discover-tip">Click to Discover Species</div>
+    <button class="music-toggle" id="music-toggle-btn" type="button">Background Music: Off</button>
 
     <div class="layer sky" id="sky-area">
       <div class="night-objects">
@@ -880,6 +898,7 @@
     const scene = document.getElementById("scene");
     const clockTitle = document.getElementById("clock-title");
     const shapeLayer = document.getElementById("shape-layer");
+    const musicToggleBtn = document.getElementById("music-toggle-btn");
     const modal = document.getElementById("circle-modal");
     const modalPhoto = document.getElementById("modal-photo");
     const modalName = document.getElementById("modal-name");
@@ -1024,6 +1043,10 @@
     let audioCtx = null;
     let activeSound = null;
     const activeOscillators = [];
+    let bgMusicAudio = null;
+    let bgMusicEnabled = false;
+    let resumeBgMusicOnModalClose = false;
+    const BG_TRACK_FILE = "soundteste.mp3";
 
     function randomBetween(min, max) { return min + Math.random() * (max - min); }
 
@@ -1127,6 +1150,11 @@
       stopActiveSound();
       activeCreature = null;
       modal.classList.remove("show");
+      if (resumeBgMusicOnModalClose) {
+        resumeBgMusicOnModalClose = false;
+        bgMusicEnabled = true;
+        startBackgroundTrack();
+      }
     }
 
     function playTone(freq, startAt, duration, gainValue = 0.05) {
@@ -1147,6 +1175,36 @@
         const idx = activeOscillators.indexOf(osc);
         if (idx >= 0) activeOscillators.splice(idx, 1);
       };
+    }
+
+    function ensureBackgroundTrack() {
+      if (bgMusicAudio) return bgMusicAudio;
+      const audio = new Audio(BG_TRACK_FILE);
+      audio.loop = true;
+      audio.volume = 0.06;
+      audio.addEventListener("error", () => {
+        bgMusicEnabled = false;
+        musicToggleBtn.textContent = "Background Music: Off";
+      });
+      bgMusicAudio = audio;
+      return bgMusicAudio;
+    }
+
+    function startBackgroundTrack() {
+      const audio = ensureBackgroundTrack();
+      audio.play().then(() => {
+        musicToggleBtn.textContent = "Background Music: On";
+      }).catch(() => {
+        bgMusicEnabled = false;
+        musicToggleBtn.textContent = "Background Music: Off";
+      });
+    }
+
+    function stopBackgroundTrack() {
+      if (!bgMusicAudio) return;
+      bgMusicAudio.pause();
+      bgMusicAudio.currentTime = 0;
+      musicToggleBtn.textContent = "Background Music: Off";
     }
 
     function playCircleSound(shape) {
@@ -1605,7 +1663,13 @@
     });
 
     modalSoundBtn.addEventListener("click", () => {
-      if (activeCreature) playCircleSound(activeCreature);
+      if (!activeCreature) return;
+      if (bgMusicEnabled) {
+        resumeBgMusicOnModalClose = true;
+        bgMusicEnabled = false;
+        stopBackgroundTrack();
+      }
+      playCircleSound(activeCreature);
     });
 
     modalClose.addEventListener("click", closeCreatureModal);
@@ -1615,6 +1679,11 @@
 
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeCreatureModal();
+    });
+    musicToggleBtn.addEventListener("click", () => {
+      bgMusicEnabled = !bgMusicEnabled;
+      if (bgMusicEnabled) startBackgroundTrack();
+      else stopBackgroundTrack();
     });
 
     let resizeTimer;
