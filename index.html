@@ -894,6 +894,7 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/@strudel/web@1.2.3"></script>
   <script>
     const scene = document.getElementById("scene");
     const clockTitle = document.getElementById("clock-title");
@@ -1043,10 +1044,97 @@
     let audioCtx = null;
     let activeSound = null;
     const activeOscillators = [];
-    let bgMusicAudio = null;
     let bgMusicEnabled = false;
     let resumeBgMusicOnModalClose = false;
-    const BG_TRACK_FILE = "soundteste.mp3";
+    let strudelReady = false;
+    let strudelInitPromise = null;
+    let bgStartNonce = 0;
+    let bgPattern = null;
+    let bgPlayback = null;
+    let strudelMuteEnforcer = null;
+    const bgAudioContexts = new Set();
+    const trackedAudioContexts = new Set();
+
+    function installAudioContextTracker() {
+      const register = (CtorName) => {
+        const Original = window[CtorName];
+        if (typeof Original !== "function" || Original.__trackedByPostcardJungle) return;
+        const Wrapped = class extends Original {
+          constructor(...args) {
+            super(...args);
+            trackedAudioContexts.add(this);
+          }
+        };
+        Wrapped.__trackedByPostcardJungle = true;
+        window[CtorName] = Wrapped;
+      };
+      register("AudioContext");
+      register("webkitAudioContext");
+    }
+
+    installAudioContextTracker();
+    const STRUDEL_BG_CODE = `
+      samples('github:tidalcycles/dirt-samples')
+
+      setCps(150/60/4)
+
+      let sec1b = stack(
+
+        n("1 .. 28").scale("<c1:piongio!6 d2:scriabin?0.2>")
+        .s("sundance")
+        .gain(0.4)
+      ).pickF("<0 2> 1", [jux(rev),slow(2),x=>x.lpf(800)])
+
+      let sec4b= stack(
+        
+        n("1 3 5 8 [~ 10] 5 3 [1 ~]")
+          .scale("c3:piongio")
+          .s("sundance")
+          .jux(rev) 
+          .sometimes(x => x.ply(2)) 
+          .rarely(x => x.scramble()),
+      )
+        
+      let sec2b = stack (
+        
+          n("0 2 4 7").add("0 7 12 14")
+        .scale("c3: piongio")
+          .s("sundance")
+          .struct("t(5,8)") 
+          .vowel("<a o e i>") 
+          .room(1)
+      )
+        
+        
+      let sec3b = stack(
+        
+          s("blip:0*2 [~ blip:2], blip:1*4")
+          .lpf(1200),
+        
+      ).every(4, x=>x.slow(2).degradeBy(0.1).ply("<4 3>")).degradeBy(0.1)
+
+      let sec5b = stack (
+          
+          n("3 5 8 2")
+          .scale("c3:scriabin")
+          .struct("x(5,8,2)")
+          .s("triangle")
+          .decay(0.1)
+          .delay(0.25)
+          .room(1),  
+      ).speed(tri.slow(2)).pan(square.fast(10))
+
+      $: arrange(
+        [21, sec2b.gain(saw.slow(4).range(0.5, 1))],
+        [8, sec1b.gain(saw.slow(4).range(0.2, 0.01))],
+        [21, sec2b.room(saw.slow(4)).gain(saw.slow(4).range(0.5, 1)).pan(rand)],
+        [12, stack(sec2b.gain(saw.slow(4).range(0.5, 0.1)), sec5b.gain(tri.slow(4).range(0.1, 0.5)))],
+        [15, sec3b.room(saw.fast(4)).gain(saw.slow(4).range(0.5, 1)).pan(rand).delay(0.2) ],
+        [8, sec1b.gain(saw.slow(4).range(0.2, 0.01))],
+        [20, sec4b.room(saw.fast(3)).gain(saw.slow(4).range(0.1, 0.2))],
+        
+      )
+    `;
 
     function randomBetween(min, max) { return min + Math.random() * (max - min); }
 
@@ -1131,6 +1219,7 @@
       modalNameInput.placeholder = `Original: ${shape.originalName}`;
       const hasSound = Boolean(shape.soundFile || shape.soundTones);
       modalSoundBtn.style.display = hasSound ? "inline-block" : "none";
+      modalSoundBtn.disabled = false;
       modal.classList.add("show");
     }
 
@@ -1177,34 +1266,160 @@
       };
     }
 
-    function ensureBackgroundTrack() {
-      if (bgMusicAudio) return bgMusicAudio;
-      const audio = new Audio(BG_TRACK_FILE);
-      audio.loop = true;
-      audio.volume = 0.06;
-      audio.addEventListener("error", () => {
-        bgMusicEnabled = false;
-        musicToggleBtn.textContent = "Background Music: Off";
-      });
-      bgMusicAudio = audio;
-      return bgMusicAudio;
+    async function ensureStrudelReady() {
+      if (strudelReady) return true;
+      if (strudelInitPromise) return strudelInitPromise;
+      if (typeof initStrudel !== "function") return false;
+      const contextsBefore = collectAudioContexts();
+      strudelInitPromise = Promise.resolve(initStrudel({
+        prebake: () => samples("github:tidalcycles/dirt-samples")
+      }))
+        .then(() => {
+          strudelReady = true;
+          rememberBackgroundContexts(contextsBefore);
+          return true;
+        })
+        .catch((err) => {
+          console.error("Strudel init failed:", err);
+          strudelReady = false;
+          return false;
+        });
+      return strudelInitPromise;
     }
 
-    function startBackgroundTrack() {
-      const audio = ensureBackgroundTrack();
-      audio.play().then(() => {
-        musicToggleBtn.textContent = "Background Music: On";
-      }).catch(() => {
+    async function startBackgroundTrack() {
+      const startNonce = ++bgStartNonce;
+      const ready = await ensureStrudelReady();
+      if (startNonce !== bgStartNonce || !bgMusicEnabled) return;
+      if (!ready) {
         bgMusicEnabled = false;
         musicToggleBtn.textContent = "Background Music: Off";
+        return;
+      }
+      try {
+        resumeBackgroundContexts();
+        stopStrudelPlayback();
+        const contextsBefore = collectAudioContexts();
+        const pattern = evaluate(STRUDEL_BG_CODE);
+        bgPattern = pattern || null;
+        if (pattern && typeof pattern.play === "function") {
+          const playback = pattern.play();
+          bgPlayback = playback || null;
+        } else {
+          bgPlayback = null;
+        }
+        if (typeof setGain === "function") {
+          try { setGain(1); } catch (_) {}
+        }
+        rememberBackgroundContexts(contextsBefore);
+        musicToggleBtn.textContent = "Background Music: On";
+        modalSoundBtn.disabled = false;
+      } catch (err) {
+        console.error("Strudel pattern failed:", err);
+        bgMusicEnabled = false;
+        musicToggleBtn.textContent = "Background Music: Off";
+        modalSoundBtn.disabled = false;
+      }
+    }
+
+    function stopStrudelPlayback() {
+      if (typeof stop === "function") {
+        try { stop(); } catch (_) {}
+      }
+      if (bgPlayback && typeof bgPlayback.stop === "function") {
+        try { bgPlayback.stop(); } catch (_) {}
+      }
+      if (bgPattern && typeof bgPattern.stop === "function") {
+        try { bgPattern.stop(); } catch (_) {}
+      }
+      if (typeof hush === "function") {
+        try { hush(); } catch (_) {}
+      }
+      if (typeof silence === "function") {
+        try { silence(); } catch (_) {}
+      }
+      if (typeof setGain === "function") {
+        try { setGain(0); } catch (_) {}
+      }
+      bgPlayback = null;
+      bgPattern = null;
+    }
+
+    function applyStrudelMutedState(muted) {
+      console.debug("[strudel] apply muted =", muted);
+      if (muted) {
+        if (typeof stop === "function") {
+          try { stop(); } catch (_) {}
+        }
+        if (typeof setGain === "function") {
+          try { setGain(0); } catch (_) {}
+        }
+        if (typeof hush === "function") {
+          try { hush(); } catch (_) {}
+        }
+        if (typeof silence === "function") {
+          try { silence(); } catch (_) {}
+        }
+      } else if (typeof setGain === "function") {
+        try { setGain(1); } catch (_) {}
+      }
+    }
+
+    function setStrudelMuted(muted) {
+      if (strudelMuteEnforcer) {
+        clearInterval(strudelMuteEnforcer);
+        strudelMuteEnforcer = null;
+      }
+      applyStrudelMutedState(muted);
+      if (muted) {
+        strudelMuteEnforcer = setInterval(() => applyStrudelMutedState(true), 300);
+      }
+    }
+
+    function collectAudioContexts() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return new Set();
+      const contexts = new Set(trackedAudioContexts);
+      for (const key of Object.getOwnPropertyNames(window)) {
+        let value;
+        try { value = window[key]; } catch (_) { continue; }
+        if (value && typeof value === "object" && value instanceof AudioCtx) contexts.add(value);
+      }
+      return contexts;
+    }
+
+    function rememberBackgroundContexts(beforeSet) {
+      const current = collectAudioContexts();
+      current.forEach((ctx) => {
+        if (ctx === audioCtx) return;
+        if (beforeSet && beforeSet.has(ctx)) return;
+        bgAudioContexts.add(ctx);
+      });
+    }
+
+    function resumeBackgroundContexts() {
+      bgAudioContexts.forEach((ctx) => {
+        if (!ctx || typeof ctx.state !== "string") return;
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      });
+    }
+
+    function suspendBackgroundContexts() {
+      bgAudioContexts.forEach((ctx) => {
+        if (!ctx || typeof ctx.state !== "string") return;
+        if (ctx.state !== "suspended") ctx.suspend().catch(() => {});
       });
     }
 
     function stopBackgroundTrack() {
-      if (!bgMusicAudio) return;
-      bgMusicAudio.pause();
-      bgMusicAudio.currentTime = 0;
+      console.debug("[strudel] stop background track");
+      bgMusicEnabled = false;
+      bgStartNonce += 1;
+      stopStrudelPlayback();
+      suspendBackgroundContexts();
+      setStrudelMuted(true);
       musicToggleBtn.textContent = "Background Music: Off";
+      modalSoundBtn.disabled = false;
     }
 
     function playCircleSound(shape) {
@@ -1681,9 +1896,18 @@
       if (e.key === "Escape") closeCreatureModal();
     });
     musicToggleBtn.addEventListener("click", () => {
+      console.debug("[strudel] toggle click. currently on =", bgMusicEnabled);
       bgMusicEnabled = !bgMusicEnabled;
-      if (bgMusicEnabled) startBackgroundTrack();
-      else stopBackgroundTrack();
+      if (bgMusicEnabled) {
+        console.debug("[strudel] turning ON");
+        setStrudelMuted(false);
+        startBackgroundTrack();
+      }
+      else {
+        console.debug("[strudel] turning OFF");
+        stopBackgroundTrack();
+        resumeBgMusicOnModalClose = false;
+      }
     });
 
     let resizeTimer;
@@ -1692,6 +1916,7 @@
       resizeTimer = setTimeout(buildScene, 120);
     });
 
+    setStrudelMuted(true);
     updateClock();
     setInterval(updateClock, 1000);
     buildScene();
